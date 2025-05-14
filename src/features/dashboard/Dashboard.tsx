@@ -1,40 +1,50 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from '../../store';
-import { fetchDocuments } from '../../store/slices/documentSlice';
-import { Button } from '../../components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const Dashboard: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  useEffect(() => {
-    dispatch(fetchDocuments());
-    console.log('Dashboard mounted');
-  }, [dispatch]);
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Session Expired</h2>
-          <p className="mb-4">Please login again to continue.</p>
-          <Button onClick={() => navigate('/login')}>Go to Login</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-screen">
-      <div className="flex-1 overflow-auto p-6">
-        <header className="mb-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Welcome, {user.email}</h1>
-          </div>
-        </header>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <p className="text-muted-foreground">
+          Welcome to your Document Management System
+        </p>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome</CardTitle>
+            <CardDescription>Personal Dashboard</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">
+              Hello, {user?.email.split('@')[0]}!
+            </p>
+            <p className="mt-2 text-muted-foreground">
+              You are logged in as {user?.role}
+            </p>
+            {user?.departments && user.departments.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium">Your departments:</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {user.departments.map((dept, index) => (
+                    <span 
+                      key={index}
+                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-secondary text-secondary-foreground"
+                    >
+                      {dept}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

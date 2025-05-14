@@ -1,11 +1,48 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { AuthState, LoginRequest, RegisterRequest } from '@/types';
+import type { AuthState, LoginRequest, RegisterRequest, User } from '@/types';
 import api from '../../services/api';
 
+// Helper function to save auth state to local storage
+const saveAuthToLocalStorage = (token: string | null, user: User | null) => {
+  try {
+    if (token && user) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      console.log('Auth data saved to local storage:', { token: token.substring(0, 15) + '...', user });
+    } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      console.log('Auth data cleared from local storage');
+    }
+  } catch (error) {
+    console.error('Error saving auth data to localStorage:', error);
+  }
+};
+
+// Helper function to get auth state from local storage
+const getAuthFromLocalStorage = (): { token: string | null; user: User | null } => {
+  try {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    console.log('Auth data retrieved from local storage:', { 
+      token: token ? token.substring(0, 15) + '...' : null,
+      user
+    });
+    return { token, user };
+  } catch (error) {
+    console.error('Error reading auth data from localStorage:', error);
+    return { token: null, user: null };
+  }
+};
+
+// Get initial state from localStorage
+const { token, user } = getAuthFromLocalStorage();
+
 const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  user,
+  token,
+  isAuthenticated: !!(token && user),
   isLoading: false,
   error: null,
 };
@@ -15,8 +52,22 @@ export const login = createAsyncThunk(
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
       const response = await api.post('/auth/login', credentials);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      const { token, userId, email, role } = response.data;
+      
+      console.log("Login response data:", response.data);
+      
+      // Create user object from response
+      const user: User = {
+        id: userId,
+        email,
+        role, // Keep the role as received from the API (uppercase ADMIN or USER)
+        departments: response.data.departments || []
+      };
+      
+      // Save to localStorage
+      saveAuthToLocalStorage(token, user);
+      
+      return { token, user };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Login failed');
@@ -38,7 +89,8 @@ export const register = createAsyncThunk(
 );
 
 export const logout = createAsyncThunk('auth/logout', async () => {
-  localStorage.removeItem('token');
+  // Clear localStorage
+  saveAuthToLocalStorage(null, null);
   return null;
 });
 
@@ -51,13 +103,13 @@ export const validateToken = createAsyncThunk(
 
       const response = await api.get(`/auth/validate?token=${auth.token}`);
       if (!response.data.valid) {
-        localStorage.removeItem('token');
+        saveAuthToLocalStorage(null, null);
         return rejectWithValue('Invalid token');
       }
       return true;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      localStorage.removeItem('token');
+      saveAuthToLocalStorage(null, null);
       return rejectWithValue(err.response?.data?.message || 'Token validation failed');
     }
   }
@@ -81,12 +133,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.token = action.payload.token;
-        state.user = {
-          id: action.payload.userId,
-          email: action.payload.email,
-          role: action.payload.role,
-          departments: [],
-        };
+        state.user = action.payload.user;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
