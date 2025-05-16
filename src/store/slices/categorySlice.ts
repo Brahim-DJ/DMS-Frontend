@@ -1,6 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { CategoryState} from '../../types';
-import api from '../../services/api';
+import type { Category } from '@/types';
+import api from '@/services/api';
+
+interface CategoryState {
+  categories: Category[];
+  isLoading: boolean;
+  error: string | null;
+}
 
 const initialState: CategoryState = {
   categories: [],
@@ -14,53 +20,32 @@ export const fetchCategories = createAsyncThunk(
     try {
       const response = await api.get('/categories');
       return response.data;
-    } catch (error: unknown) {
-      return rejectWithValue(
-        error instanceof Error
-          ? error.message
-          : typeof error === 'object' && error && 'response' in error
-          ? ((error as { response: { data: { message: string } } }).response.data.message)
-          : 'Failed to fetch categories'
-      );
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch categories');
     }
   }
 );
 
 export const createCategory = createAsyncThunk(
   'categories/create',
-  async ({ name, description }: { name: string; description?: string }, { rejectWithValue }) => {
+  async (name: string, { rejectWithValue }) => {
     try {
-      const response = await api.post('/categories', { name, description });
+      const response = await api.post('/categories', { name });
       return response.data;
-    } catch (error: unknown) {
-      return rejectWithValue(
-        error instanceof Error
-          ? error.message
-          : typeof error === 'object' && error && 'response' in error
-          ? ((error as { response: { data: { message: string } } }).response.data.message)
-          : 'Failed to create category'
-      );
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to create category');
     }
   }
 );
 
 export const updateCategory = createAsyncThunk(
   'categories/update',
-  async (
-    { id, name, description }: { id: number; name: string; description?: string },
-    { rejectWithValue }
-  ) => {
+  async ({ id, name }: { id: number; name: string }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/categories/${id}`, { name, description });
+      const response = await api.put(`/categories/${id}`, { name });
       return response.data;
-    } catch (error: unknown) {
-      return rejectWithValue(
-      error instanceof Error
-        ? error.message
-        : typeof error === 'object' && error && 'response' in error
-        ? ((error as { response: { data: { message: string } } }).response.data.message)
-        : 'Failed to update category'
-      );
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update category');
     }
   }
 );
@@ -71,14 +56,8 @@ export const deleteCategory = createAsyncThunk(
     try {
       await api.delete(`/categories/${id}`);
       return id;
-    } catch (error: unknown) {
-      return rejectWithValue(
-      error instanceof Error
-        ? error.message
-        : typeof error === 'object' && error && 'response' in error
-        ? ((error as { response: { data: { message: string } } }).response.data.message)
-        : 'Failed to delete category'
-      );
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete category');
     }
   }
 );
@@ -105,13 +84,11 @@ const categorySlice = createSlice({
         state.categories.push(action.payload);
       })
       .addCase(updateCategory.fulfilled, (state, action) => {
-        const index = state.categories.findIndex((cat) => cat.id === action.payload.id);
-        if (index !== -1) {
-          state.categories[index] = action.payload;
-        }
+        const idx = state.categories.findIndex(cat => cat.id === action.payload.id);
+        if (idx !== -1) state.categories[idx] = action.payload;
       })
       .addCase(deleteCategory.fulfilled, (state, action) => {
-        state.categories = state.categories.filter((cat) => cat.id !== action.payload);
+        state.categories = state.categories.filter(cat => cat.id !== action.payload);
       });
   },
 });

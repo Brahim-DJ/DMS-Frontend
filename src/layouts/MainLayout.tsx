@@ -1,54 +1,56 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import type { RootState } from '@/store';
-import { Button } from '@/components/ui/button';
-import { useDispatch } from 'react-redux';
-import type { AppDispatch } from '@/store';
-import { logout } from '@/store/slices/authSlice';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import { Outlet, NavLink } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { Button } from "@/components/ui/button";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/store";
+import { logout } from "@/store/slices/authSlice";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   LayoutDashboard,
   Users,
   Menu,
   X,
   LogOut,
-  User
-} from 'lucide-react';
+  User,
+  FileText,
+  Briefcase,
+  Tag,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const MainLayout: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Check if user role is admin (case-insensitive)
-  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  // Check if user is admin (case-insensitive)
+  const isAdmin = user?.role?.toUpperCase() === "ADMIN";
 
   // Debug user info
-  console.log("User info:", { user, role: user?.role, isAdmin });
+  console.log("[MainLayout] User info:", { user, role: user?.role, isAdmin });
 
   const handleLogout = async () => {
     await dispatch(logout());
-    toast.success('Logged out successfully');
-    navigate('/login');
+    toast.success("Logged out successfully");
+    navigate("/login");
   };
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-muted/40 border-r transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:z-auto",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -57,9 +59,9 @@ export const MainLayout: React.FC = () => {
         <div className="px-4 py-4 border-b">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">DMS System</h2>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden"
             >
@@ -74,40 +76,95 @@ export const MainLayout: React.FC = () => {
             {/* Dashboard link - visible to everyone */}
             <NavLink
               to="/dashboard"
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                isActive 
-                  ? "bg-secondary text-secondary-foreground" 
-                  : "hover:bg-secondary/80 hover:text-secondary-foreground"
-              )}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-secondary text-secondary-foreground"
+                    : "hover:bg-secondary/80 hover:text-secondary-foreground"
+                )
+              }
               onClick={() => setSidebarOpen(false)}
             >
               <LayoutDashboard className="h-5 w-5" />
               Dashboard
             </NavLink>
 
+            {/* Documents link - visible to everyone */}
+            <NavLink
+              to="/documents"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-secondary text-secondary-foreground"
+                    : "hover:bg-secondary/80 hover:text-secondary-foreground"
+                )
+              }
+              onClick={() => setSidebarOpen(false)}
+            >
+              <FileText className="h-5 w-5" />
+              Documents
+            </NavLink>
+
+            <NavLink
+              to="/categories"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-secondary text-secondary-foreground"
+                    : "hover:bg-secondary/80 hover:text-secondary-foreground"
+                )
+              }
+              onClick={() => setSidebarOpen(false)}
+            >
+              <Tag className="h-5 w-5" />
+              Categories
+            </NavLink>
+
             {/* Users link - only visible to admins */}
             {isAdmin && (
               <NavLink
                 to="/users"
-                className={({ isActive }) => cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive 
-                    ? "bg-secondary text-secondary-foreground" 
-                    : "hover:bg-secondary/80 hover:text-secondary-foreground"
-                )}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-secondary text-secondary-foreground"
+                      : "hover:bg-secondary/80 hover:text-secondary-foreground"
+                  )
+                }
                 onClick={() => setSidebarOpen(false)}
               >
                 <Users className="h-5 w-5" />
                 Users
               </NavLink>
             )}
+            {/* Departments link - only admins */}
+            {isAdmin && (
+              <NavLink
+                to="/departments"
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-secondary text-secondary-foreground"
+                      : "hover:bg-secondary/80 hover:text-secondary-foreground"
+                  )
+                }
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Briefcase className="h-5 w-5" />
+                Departments
+              </NavLink>
+            )}
           </nav>
 
           <div className="px-3 mt-auto">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start" 
+            <Button
+              variant="outline"
+              className="w-full justify-start"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 mr-2" />
@@ -131,7 +188,7 @@ export const MainLayout: React.FC = () => {
               <Menu className="h-5 w-5" />
               <span className="sr-only">Open sidebar</span>
             </Button>
-            
+
             <div className="flex items-center ml-auto gap-4">
               {user && (
                 <div className="flex items-center gap-2">
@@ -139,9 +196,11 @@ export const MainLayout: React.FC = () => {
                     <User className="h-4 w-4" />
                   </span>
                   <div className="hidden lg:block">
-                    <p className="text-sm font-medium leading-none">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">
+                      {user.email}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {user.role}
+                      {user.role === "ADMIN" ? "Administrator" : "User"}
                     </p>
                   </div>
                 </div>

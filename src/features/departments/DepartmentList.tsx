@@ -1,97 +1,188 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from '../../store';
-import { fetchDepartments, deleteDepartment } from '../../store/slices/departmentSlice';
-import { Button } from '../../components/ui/button';
-import { PlusCircle, Edit, Trash } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState, AppDispatch } from '@/store';
+import { Link } from 'react-router-dom';
+import { fetchDepartments, deleteDepartment } from '@/store/slices/departmentSlice';
+import { toast } from 'sonner';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 
 export const DepartmentList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
-  const { departments, isLoading, error } = useSelector((state: RootState) => state.departments);
   const { user } = useSelector((state: RootState) => state.auth);
-  const isAdmin = user?.role === 'ADMIN';
-  
+  const { departments, isLoading, error } = useSelector((state: RootState) => state.departments);
+
+  const [departmentToDelete, setDepartmentToDelete] = useState<number | null>(null);
+
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+
   useEffect(() => {
     dispatch(fetchDepartments());
   }, [dispatch]);
-  
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this department?')) {
-      await dispatch(deleteDepartment(id));
+
+  const handleDeleteDepartment = async () => {
+    if (departmentToDelete === null) return;
+    try {
+      await dispatch(deleteDepartment(departmentToDelete)).unwrap();
+      toast.success('Department deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete department');
+    } finally {
+      setDepartmentToDelete(null);
     }
   };
-  
-  if (!isAdmin) {
-    return <div className="p-6">You don't have permission to view this page.</div>;
-  }
-  
-  if (isLoading) {
-    return <div className="p-6">Loading departments...</div>;
-  }
-  
-  if (error) {
-    return <div className="p-6 text-red-500">Error: {error}</div>;
-  }
-  
+
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Departments</h1>
-        <Button onClick={() => navigate('/departments/create')}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Department
-        </Button>
-      </div>
-      
-      {departments.length === 0 ? (
-        <p>No departments found.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Department Name
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {departments.map((department) => (
-                <tr key={department.id} className="hover:bg-gray-50">
-                  <td className="py-4 px-4 text-sm">{department.id}</td>
-                  <td className="py-4 px-4 text-sm">{department.name}</td>
-                  <td className="py-4 px-4 text-sm">
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/departments/${department.id}/edit`)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" /> Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(department.id)}
-                      >
-                        <Trash className="h-4 w-4 mr-1" /> Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Departments</h2>
+          <p className="text-muted-foreground">
+            Manage and view all departments in the system
+          </p>
         </div>
-      )}
+        {isAdmin && (
+          <Link to="/departments/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Department
+            </Button>
+          </Link>
+        )}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Departments</CardTitle>
+          <CardDescription>
+            {departments.length} department{departments.length !== 1 ? 's' : ''} found
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-destructive">{error}</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => dispatch(fetchDepartments())}
+              >
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    {isAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {departments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 3 : 2} className="text-center py-8 text-muted-foreground">
+                        No departments found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    departments.map((dept) => (
+                      <TableRow key={dept.id}>
+                        <TableCell>{dept.id}</TableCell>
+                        <TableCell>{dept.name}</TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <Link to={`/departments/${dept.id}/edit`}>
+                                  <DropdownMenuItem>
+                                    <Pencil className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                </Link>
+                                <DropdownMenuItem
+                                  onClick={() => setDepartmentToDelete(dept.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Department Confirmation Dialog */}
+      <AlertDialog open={departmentToDelete !== null} onOpenChange={() => setDepartmentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the department and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDepartment} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

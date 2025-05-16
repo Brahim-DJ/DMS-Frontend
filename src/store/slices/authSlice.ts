@@ -51,22 +51,26 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
+      // 1. Login request (no token needed)
       const response = await api.post('/auth/login', credentials);
       const { token, userId, email, role } = response.data;
-      
-      console.log("Login response data:", response.data);
-      
-      // Create user object from response
+
+      // 2. Fetch user profile with Bearer token
+      const userResponse = await api.get(`/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const userData = userResponse.data;
+
       const user: User = {
-        id: userId,
-        email,
-        role, // Keep the role as received from the API (uppercase ADMIN or USER)
-        departments: response.data.departments || []
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        departments: userData.departments || [],
       };
-      
-      // Save to localStorage
+
+      // 3. Save to localStorage for future requests
       saveAuthToLocalStorage(token, user);
-      
+
       return { token, user };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };

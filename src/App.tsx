@@ -11,18 +11,36 @@ import { Dashboard } from './features/dashboard/Dashboard';
 import { UserList } from './features/users/UserList';
 import { CreateUser } from './features/users/CreateUser';
 import { EditUser } from './features/users/EditUser';
+import { DocumentList } from './features/documents/DocumentList';
+import { DocumentDetail } from './features/documents/DocumentDetail';
+import { CreateDocument } from './features/documents/CreateDocument';
+import { EditDocument } from './features/documents/EditDocument';
+import { DepartmentList } from './features/departments/DepartmentList';
+import { CreateDepartment } from './features/departments/CreateDepartment';
+import { CategoryList } from './features/categories/CategoryList';
+import { CreateCategory } from './features/categories/CreateCategory';
+import { EditCategory } from './features/categories/EditCategory';
+import { fetchCategories } from '@/store/slices/categorySlice';
+
+import { useDispatch } from 'react-redux';
+import { fetchDepartments } from '@/store/slices/departmentSlice';
 
 const AppContent: React.FC = () => {
-  // This effect runs once when the app loads to ensure token is loaded
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
-    
     console.log('[App] Initializing app with auth state:', {
       tokenExists: !!token,
       userExists: !!userStr
     });
   }, []);
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchDepartments());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   return (
     <>
@@ -41,6 +59,20 @@ const AppContent: React.FC = () => {
             <Route path="/users" element={<UserList />} />
             <Route path="/users/create" element={<CreateUser />} />
             <Route path="/users/:id/edit" element={<EditUser />} />
+            
+            {/* Document Management Routes */}
+            <Route path="/documents" element={<DocumentList />} />
+            <Route path="/documents/create" element={<CreateDocument />} />
+            <Route path="/documents/:id" element={<DocumentDetail />} />
+            <Route path="/documents/:id/edit" element={<EditDocument />} />
+
+            {/* Department Management Routes */}
+            <Route path="/departments" element={<DepartmentList />} />
+            <Route path="/departments/create" element={<CreateDepartment />} />
+
+            <Route path="/categories" element={<CategoryList />} />
+            <Route path="/categories/create" element={<CreateCategory />} />
+            <Route path="/categories/:id/edit" element={<EditCategory />} />
           </Route>
           
           {/* Redirect */}
@@ -48,8 +80,6 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
-      
-      {/* Sonner toast provider */}
       <Toaster richColors position="top-right" />
     </>
   );
